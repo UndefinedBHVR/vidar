@@ -2,11 +2,13 @@ use avian3d::{
     math::AdjustPrecision,
     prelude::*,
 };
-use bevy::{
-    prelude::*,
-};
+use bevy::prelude::*;
 
-use super::KinematicCharacterController;
+use super::{
+    KCCFloorDetection,
+    KCCGrounded,
+    KinematicCharacterController,
+};
 
 fn project_onto_plane(velocity: Vec3, plane: Vec3) -> Vec3 {
     velocity - plane * velocity.dot(plane)
@@ -40,7 +42,7 @@ pub fn collide_and_slide(
             &mut spatial_query,
             &mut filter,
             collider,
-            &transform,
+            &mut transform,
             5,
             velocity,
             0.5,
@@ -54,6 +56,7 @@ pub fn collide_and_slide(
         character_controller.velocity = translation / delta_seconds;
     }
 }
+
 /// Kinematic bodies do not get pushed by collisions by default,
 /// so it needs to be done manually.
 ///
@@ -67,7 +70,7 @@ fn recursive_collide_and_slide(
     spatial_query: &mut spatial_query::SpatialQuery,
     filter: &spatial_query::SpatialQueryFilter,
     collider: &Collider,
-    transform: &Transform,
+    transform: &mut Transform,
     max_depth: usize,
     velocity: Vec3,
     padding: f32,
@@ -79,7 +82,7 @@ fn recursive_collide_and_slide(
 
     let (velocity_normalized, length) = Dir3::new_and_length(velocity).unwrap();
 
-    let cast_result = match spatial_query.cast_shape(
+    let hit = match spatial_query.cast_shape(
         collider,
         transform.translation,
         transform.rotation,
@@ -92,26 +95,20 @@ fn recursive_collide_and_slide(
         None => return velocity,
     };
 
-    if (cast_result.time_of_impact - padding).abs() > 0.01 {
+    if (hit.time_of_impact - padding).abs() > 0.01 {
         planes.clear();
     }
 
-    planes.push(cast_result.normal1);
-
-    let surface_point = velocity * (cast_result.time_of_impact - padding).max(0.0);
-    let remaining_velocity = velocity - surface_point;
-
-    let mut projected_velocity =
-        remaining_velocity - cast_result.normal1 * remaining_velocity.dot(cast_result.normal1);
-
-    if planes.len() > 1 {
-        for (plane, next_plane) in
-            planes.iter().zip(planes.iter().cycle().skip(1)).take(planes.len())
-        {
-            let crease = plane.cross(*next_plane);
-            projected_velocity = crease * crease.dot(projected_velocity);
-        }
-    }
+    //planes.push(hit.normal1);
+    let normal = hit.normal1;
+    let distance = hit.time_of_impact * length;
+    transform.translation += velocity_normalized * distance;
+    let surface_point = velocity * (hit.time_of_impact - padding).max(0.0);
+    let reflection = velocity - 2.0 * velocity.dot(normal) * normal;
+    let slide_factor = 1.0; // Adjust this value to control slidiness
+    let mut projected_velocity = velocity.lerp(reflection, slide_factor);
+    projected_velocity -= normal * normal.dot(projected_velocity);
+    transform.translation += normal * 0.0001;
 
     if projected_velocity.dot(velocity) <= 0.0 {
         return Vec3::ZERO;

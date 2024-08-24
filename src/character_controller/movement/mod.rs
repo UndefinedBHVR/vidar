@@ -88,7 +88,7 @@ pub fn movement_input(
     let mouse_sensitivity = Vec2::new(0.12, 0.10);
     let mut camera_movement = action_state.axis_pair(&PlayerActions::Camera) * time.delta_seconds();
     camera_movement.y = -camera_movement.y * mouse_sensitivity.y;
-    camera_movement.x *= mouse_sensitivity.x;
+    camera_movement.x *= -1.0 * mouse_sensitivity.x;
     let (mut yaw, mut pitch, _) = camera_transform.rotation.to_euler(EulerRot::YXZ);
     pitch = (pitch - camera_movement.y).clamp(-1.54, 1.54);
     yaw += camera_movement.x;

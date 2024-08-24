@@ -52,11 +52,10 @@ impl Default for KinematicCharacterController {
     }
 }
 
-#[derive(Component, Reflect, Debug)]
+#[derive(Component, Reflect, Debug, Default)]
 #[reflect(Component)]
 /// A component that when added to the controller enables grounding management.
 /// This component requires the [`KCCFloorDetection`] component to be present on the same entity.
-#[derive(Default)]
 pub struct KCCGrounded {
     /// Is this character currently grounded?
     pub grounded: bool,
@@ -99,8 +98,9 @@ impl Default for KCCFloorDetection {
 }
 
 /// A component that when added to the controller enables snapping to the floor.
-/// This component requires the [`KCCFloorDetection`] component to be present on the same entity.
-#[derive(Component, Reflect, Debug)]
+/// This component requires the [`KCCFloorDetection`] and the [`KCCGrounded`] components to be
+/// present on the same entity.
+#[derive(Component, Reflect, Debug, Default)]
 #[reflect(Component)]
 pub struct KCCFloorSnap;
 
