@@ -26,6 +26,7 @@ blenvy = { git = "https://github.com/kaosat-dev/Blenvy/", branch = "blenvy" }
 # Character Controller
 bevy-tnua-avian3d = "0.1.1"
 bevy-inspector-egui = "0.25.2"
+bevy_gizmo_log = "0.2.0"
 [features]
 default = [
     # Default to a native dev build.

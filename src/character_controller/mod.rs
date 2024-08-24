@@ -27,7 +27,12 @@ mod kinematic_controller;
 mod movement;
 
 pub fn plugin(app: &mut App) {
-    app.add_plugins((camera_rig::plugin, movement::plugin, input::plugin));
+    app.add_plugins((
+        camera_rig::plugin,
+        movement::plugin,
+        input::plugin,
+        kinematic_controller::plugin,
+    ));
     app.configure_sets(
         FixedUpdate,
         CharacterControllerSet::Input.run_if(in_state(GameState::Playing)),
@@ -57,6 +62,9 @@ pub struct CharacterControllerBundle {
     pub rigid_body: RigidBody,
     pub collider: Collider,
     pub ground_caster: ShapeCaster,
+    pub kinematic_controller: kinematic_controller::KinematicCharacterController,
+    pub kcc_grounded: kinematic_controller::KCCGrounded,
+    pub kcc_floor_detection: kinematic_controller::KCCFloorDetection,
 }
 
 impl Default for CharacterControllerBundle {
@@ -67,7 +75,7 @@ impl Default for CharacterControllerBundle {
             player: Player,
             input: InputManagerBundle::with_map(input::input_map()),
             gravity: Gravity::default(),
-            rigid_body: RigidBody::Dynamic,
+            rigid_body: RigidBody::Kinematic,
             collider: Capsule3d::new(0.4, 0.8).into(),
             ground_caster: ShapeCaster::new(
                 Capsule3d::new(0.4, 0.8),
@@ -76,6 +84,9 @@ impl Default for CharacterControllerBundle {
                 Dir3::NEG_Y,
             )
             .with_max_time_of_impact(0.1),
+            kinematic_controller: kinematic_controller::KinematicCharacterController::default(),
+            kcc_grounded: kinematic_controller::KCCGrounded::default(),
+            kcc_floor_detection: kinematic_controller::KCCFloorDetection::default(),
         }
     }
 }

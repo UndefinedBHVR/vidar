@@ -6,10 +6,7 @@ use bevy::{
 };
 
 use super::Screen;
-use crate::{
-    assets::BgmHandles,
-    audio::bgm::BgmCommands as _,
-};
+use crate::audio::bgm::BgmCommands as _;
 
 pub(super) fn plugin(app: &mut App) {
     app.add_systems(OnEnter(Screen::Playing), spawn_level);
@@ -22,7 +19,7 @@ pub(super) fn plugin(app: &mut App) {
     );
 }
 
-fn spawn_level(mut commands: Commands) {
+fn spawn_level(commands: Commands) {
     //commands.add(SpawnLevel);
     //commands.play_bgm(BgmHandles::PATH_GAMEPLAY);
 }

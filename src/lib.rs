@@ -6,19 +6,18 @@ mod demo_level;
 mod dev_tools;
 mod screens;
 mod theme;
-use avian3d::{
-    prelude::PhysicsDebugPlugin,
-    PhysicsPlugins,
-};
+use avian3d::PhysicsPlugins;
 use bevy::{
     asset::AssetMetaCheck,
     audio::{
         AudioPlugin,
         Volume,
     },
+    log::LogPlugin,
     prelude::*,
     render::view::RenderLayers,
 };
+use bevy_gizmo_log::GizmoLogPlugin;
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
 use blenvy::BlenvyPlugin;
 
@@ -59,11 +58,13 @@ impl Plugin for AppPlugin {
                 .set(AudioPlugin {
                     global_volume: GlobalVolume { volume: Volume::new(0.3) },
                     ..default()
-                }),
+                })
+                .disable::<LogPlugin>(),
         );
 
         app.add_plugins(WorldInspectorPlugin::new());
         app.add_plugins(PhysicsPlugins::default());
+        app.add_plugins(GizmoLogPlugin::default());
         //app.add_plugins(PhysicsDebugPlugin::default());
         // Add other plugins.
         app.add_plugins((
