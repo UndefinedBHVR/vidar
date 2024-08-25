@@ -13,7 +13,6 @@ use bevy::{
         AudioPlugin,
         Volume,
     },
-    log::LogPlugin,
     prelude::*,
     render::view::RenderLayers,
 };

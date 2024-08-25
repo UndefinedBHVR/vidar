@@ -19,7 +19,7 @@ pub(super) fn plugin(app: &mut App) {
     );
 }
 
-fn spawn_level(commands: Commands) {
+fn spawn_level(_: Commands) {
     //commands.add(SpawnLevel);
     //commands.play_bgm(BgmHandles::PATH_GAMEPLAY);
 }

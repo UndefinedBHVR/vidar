@@ -109,7 +109,7 @@ pub struct KCCFloorSnap;
 pub fn update_kinematic_character_controller(
     mut query: Query<(&mut KinematicCharacterController, &mut LinearVelocity)>,
 ) {
-    for (mut controller, linear_velocity) in query.iter_mut() {
+    for (mut controller, _) in query.iter_mut() {
         controller.prev_velocity = controller.velocity;
         //linear_velocity.0 = controller.velocity;
     }

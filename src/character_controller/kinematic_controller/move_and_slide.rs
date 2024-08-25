@@ -23,17 +23,23 @@ pub fn collide_and_slide_system(
     let delta_seconds = time.delta_seconds_f64().adjust_precision();
 
     // Iterate over all character controllers and run the recursive_collide_and_slide function.
-    for (mut transform, collider, entity, mut character_controller) in &mut character_controllers {
-        let velocity = character_controller.velocity * delta_seconds;
+    for (mut transform, _, entity, mut character_controller) in &mut character_controllers {
+        let _ = character_controller.velocity * delta_seconds;
 
         // Filter out ourself from the spatial query.
-        let mut filter = SpatialQueryFilter::default().with_excluded_entities([entity]);
+        let filter = SpatialQueryFilter::default().with_excluded_entities([entity]);
 
         // This algorithm keeps a list of planes for the function in order to prevent a "crushing"
         // effect where tight corridors can cause the character to get stuck or otherwise
         // forced into the ground
 
-        collide_and_slide(&mut spatial_query, &filter, &mut character_controller, &mut transform, &time);
+        collide_and_slide(
+            &mut spatial_query,
+            &filter,
+            &mut character_controller,
+            &mut transform,
+            &time,
+        );
 
         // Move us to the new position
         //transform.translation += translation;
@@ -52,6 +58,7 @@ pub fn collide_and_slide_system(
 ///
 /// This specific implementation is based primarily on [Improved Collision detection and Response](https://www.peroxide.dk/papers/collision/collision.pdf).
 /// by Kasper Fauerby.
+#[allow(dead_code)]
 fn recursive_collide_and_slide(
     spatial_query: &mut spatial_query::SpatialQuery,
     filter: &spatial_query::SpatialQueryFilter,
