@@ -12,7 +12,7 @@ pub(super) fn plugin(app: &mut App) {
     app.add_systems(
         PostUpdate,
         (
-            move_and_slide::collide_and_slide,
+            move_and_slide::collide_and_slide_system,
             update_kinematic_character_controller,
             update_kinematic_floor,
             update_kinematic_grounding,
@@ -109,7 +109,7 @@ pub struct KCCFloorSnap;
 pub fn update_kinematic_character_controller(
     mut query: Query<(&mut KinematicCharacterController, &mut LinearVelocity)>,
 ) {
-    for (mut controller, mut linear_velocity) in query.iter_mut() {
+    for (mut controller, linear_velocity) in query.iter_mut() {
         controller.prev_velocity = controller.velocity;
         //linear_velocity.0 = controller.velocity;
     }

@@ -58,8 +58,7 @@ impl Plugin for AppPlugin {
                 .set(AudioPlugin {
                     global_volume: GlobalVolume { volume: Volume::new(0.3) },
                     ..default()
-                })
-                .disable::<LogPlugin>(),
+                }), //.disable::<LogPlugin>(),
         );
 
         app.add_plugins(WorldInspectorPlugin::new());
