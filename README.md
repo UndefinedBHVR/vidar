@@ -24,7 +24,7 @@ Vidar is built off a template provided by the Bevy Jam working group. All work f
 
 All code original to this repository, including modifications and additions to the original template, is also available under the MIT license.
 
-Please see the [LICENSE](./LICENSE) and [TEMPLATE LICENSE](./TEMPLATE-LICENSE) file for more information.
+Please see the [LICENSE](./LICENSE) file for more information.
 
 ## Acknowledgements
 
