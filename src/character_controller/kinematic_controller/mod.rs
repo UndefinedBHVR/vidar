@@ -3,19 +3,20 @@
 //!
 //! Please note that all components within this module are prefixed with `KCC` to make it clear that
 //! they are part of the Kinematic Character Controller framework.
+
 use avian3d::prelude::*;
 use bevy::prelude::*;
 
-mod move_and_slide;
+mod movement;
 
 pub(super) fn plugin(app: &mut App) {
     app.add_systems(
         PostUpdate,
         (
-            move_and_slide::collide_and_slide_system,
+            movement::collide_and_slide_system,
             update_kinematic_character_controller,
             update_kinematic_floor,
-            update_kinematic_grounding,
+            floor_snap,
         )
             .chain(),
     );
@@ -89,10 +90,10 @@ impl Default for KCCFloorDetection {
         Self {
             prev_floor_normal: Vec3::ZERO,
             floor_normal: Vec3::ZERO,
-            ground_direction: Vec3::Y,
+            ground_direction: Vec3::NEG_Y,
             floor_collider: Collider::capsule(0.4, 0.8),
             floor_distance: 0.0,
-            max_floor_distance: 0.1,
+            max_floor_distance: 0.05,
         }
     }
 }
@@ -103,7 +104,6 @@ impl Default for KCCFloorDetection {
 #[derive(Component, Reflect, Debug, Default)]
 #[reflect(Component)]
 pub struct KCCFloorSnap;
-
 /// Function that updates the kinematic character controller's internal state. Currently, this only
 /// updates the previous velocity.
 pub fn update_kinematic_character_controller(
@@ -116,12 +116,12 @@ pub fn update_kinematic_character_controller(
 }
 
 pub fn update_kinematic_floor(
-    mut query: Query<(&mut KCCFloorDetection, &Transform, Option<&mut KCCGrounded>)>,
+    mut query: Query<(&mut KCCFloorDetection, &Transform, Option<&mut KCCGrounded>, Entity)>,
     spatial_query: SpatialQuery,
 ) {
-    for (mut floor_detection, transform, grounded) in query.iter_mut() {
+    for (mut floor_detection, transform, mut grounded, entity) in query.iter_mut() {
         floor_detection.prev_floor_normal = floor_detection.floor_normal;
-        if let Some(mut grounded) = grounded {
+        if let Some(grounded) = grounded.as_mut() {
             grounded.prev_grounded = grounded.grounded;
         }
 
@@ -131,8 +131,8 @@ pub fn update_kinematic_floor(
             Quat::IDENTITY,
             Dir3::new_unchecked(floor_detection.ground_direction.normalize()),
             floor_detection.max_floor_distance,
-            true,
-            SpatialQueryFilter::default(),
+            false,
+            &SpatialQueryFilter::default().with_excluded_entities([entity]),
         ) else {
             // Nothing was hit, move on.
             continue;
@@ -140,12 +140,27 @@ pub fn update_kinematic_floor(
 
         floor_detection.floor_normal = cast.normal1;
         floor_detection.floor_distance = cast.time_of_impact;
+        if let Some(grounded) = grounded.as_mut() {
+            grounded.grounded = true;
+        }
     }
 }
 
-pub fn update_kinematic_grounding(mut query: Query<(&mut KCCGrounded, &KCCFloorDetection)>) {
-    for (mut grounded, floor_detection) in query.iter_mut() {
-        grounded.prev_grounded = grounded.grounded;
-        grounded.grounded = floor_detection.floor_normal != Vec3::ZERO;
+pub fn floor_snap(
+    mut query: Query<(
+        &mut Transform,
+        &KCCFloorDetection,
+        &KCCGrounded,
+        Option<&KCCFloorSnap>,
+        &KinematicCharacterController,
+    )>,
+) {
+    for (mut transform, floor_detection, grounded, _, controller) in query.iter_mut() {
+        if (grounded.grounded || grounded.prev_grounded)
+            && controller.velocity.y <= 0.0
+            && floor_detection.floor_distance < 0.01
+        {
+            transform.translation.y -= floor_detection.floor_distance - 0.001;
+        }
     }
 }

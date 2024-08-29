@@ -18,6 +18,7 @@ use bevy::{
 };
 use bevy_gizmo_log::GizmoLogPlugin;
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
+use bevy_transform_interpolation::TransformInterpolationPlugin;
 use blenvy::BlenvyPlugin;
 
 pub struct AppPlugin;
@@ -63,6 +64,7 @@ impl Plugin for AppPlugin {
         app.add_plugins(WorldInspectorPlugin::new());
         app.add_plugins(PhysicsPlugins::default());
         app.add_plugins(GizmoLogPlugin::default());
+        app.add_plugins(TransformInterpolationPlugin::default());
         //app.add_plugins(PhysicsDebugPlugin::default());
         // Add other plugins.
         app.add_plugins((

@@ -25,6 +25,7 @@ mod camera_rig;
 mod input;
 mod kinematic_controller;
 mod movement;
+mod weapon;
 
 pub fn plugin(app: &mut App) {
     app.add_plugins((
@@ -32,6 +33,7 @@ pub fn plugin(app: &mut App) {
         movement::plugin,
         input::plugin,
         kinematic_controller::plugin,
+        weapon::plugin,
     ));
     app.configure_sets(
         FixedUpdate,

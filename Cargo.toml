@@ -20,13 +20,14 @@ tracing = { version = "0.1", features = [
 # Input management
 leafwing-input-manager = "0.15.0"
 # Physics Engine
-avian3d = "0.1.2"
+avian3d = { git = "https://github.com/Jondolf/avian"}
 # Level Editor Tooling
 blenvy = { git = "https://github.com/kaosat-dev/Blenvy/", branch = "blenvy" }
 # Character Controller
-bevy-tnua-avian3d = "0.1.1"
+# bevy-tnua-avian3d = "0.1.1"
 bevy-inspector-egui = "0.25.2"
 bevy_gizmo_log = "0.2.0"
+bevy_transform_interpolation = { git = "https://github.com/Jondolf/bevy_transform_interpolation" }
 [features]
 default = [
     # Default to a native dev build.

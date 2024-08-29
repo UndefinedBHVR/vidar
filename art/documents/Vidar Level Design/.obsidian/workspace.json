@@ -4,31 +4,18 @@
     "type": "split",
     "children": [
       {
-        "id": "2650ee54562f35a1",
+        "id": "c2abcf16350e9bbc",
         "type": "tabs",
         "children": [
           {
-            "id": "c98f00cb750b1c9e",
+            "id": "8d80d1e158589323",
             "type": "leaf",
             "state": {
-              "type": "graph",
+              "type": "empty",
               "state": {}
             }
-          },
-          {
-            "id": "e2bdc89f904c6680",
-            "type": "leaf",
-            "state": {
-              "type": "markdown",
-              "state": {
-                "file": "Base Testing Level.md",
-                "mode": "source",
-                "source": false
-              }
-            }
           }
-        ],
-        "currentTab": 1
+        ]
       }
     ],
     "direction": "vertical"
@@ -94,7 +81,6 @@
             "state": {
               "type": "backlink",
               "state": {
-                "file": "Base Testing Level.md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -111,7 +97,6 @@
             "state": {
               "type": "outgoing-link",
               "state": {
-                "file": "Base Testing Level.md",
                 "linksCollapsed": false,
                 "unlinkedCollapsed": true
               }
@@ -133,9 +118,7 @@
             "type": "leaf",
             "state": {
               "type": "outline",
-              "state": {
-                "file": "Base Testing Level.md"
-              }
+              "state": {}
             }
           }
         ]
@@ -155,8 +138,9 @@
       "command-palette:Open command palette": false
     }
   },
-  "active": "e2bdc89f904c6680",
+  "active": "52d7c0ce42c3515c",
   "lastOpenFiles": [
+    "2024-08-26.md",
     "Base Testing Level.md",
     "Level Design Doc.md",
     "create a link.md"

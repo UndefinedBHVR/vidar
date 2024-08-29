@@ -316,8 +316,7 @@ checksum = "0c4b4d0bd25bd0b74681c0ad21497610ce1b7c91b1022cd21c80c6fbdd9476b0"
 [[package]]
 name = "avian3d"
 version = "0.1.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "263f406c08c5ec296039ba06d7aa50e54f9ecd996f682aaa63eae25709e8935b"
+source = "git+https://github.com/Jondolf/avian#63580d38a50322a1f80ba55925094db47749d68e"
 dependencies = [
  "avian_derive",
  "bevy",
@@ -335,9 +334,9 @@ dependencies = [
 [[package]]
 name = "avian_derive"
 version = "0.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b4adeeecb6d4628d3ca11836ce9af8309f9552d4bd3e3f6e4368440d8163260c"
+source = "git+https://github.com/Jondolf/avian#63580d38a50322a1f80ba55925094db47749d68e"
 dependencies = [
+ "proc-macro-error",
  "proc-macro2",
  "quote",
  "syn 2.0.76",
@@ -407,26 +406,6 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn 2.0.76",
-]
-
-[[package]]
-name = "bevy-tnua-avian3d"
-version = "0.1.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6cbc77298804e3f10010b1b4df52edbb96fc310679c554df128890e4208b321f"
-dependencies = [
- "avian3d",
- "bevy",
- "bevy-tnua-physics-integration-layer",
-]
-
-[[package]]
-name = "bevy-tnua-physics-integration-layer"
-version = "0.4.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7baa47d51ffdd74afb641bd0811455e6648bb4f4c039afa52be0849bc202cb4f"
-dependencies = [
- "bevy",
 ]
 
 [[package]]
@@ -1235,6 +1214,14 @@ dependencies = [
  "bevy_reflect",
  "serde",
  "thiserror",
+]
+
+[[package]]
+name = "bevy_transform_interpolation"
+version = "0.1.0"
+source = "git+https://github.com/Jondolf/bevy_transform_interpolation#93b7036f754aa86ec03fb1b728677163c82fbf88"
+dependencies = [
+ "bevy",
 ]
 
 [[package]]
@@ -3735,6 +3722,30 @@ dependencies = [
 ]
 
 [[package]]
+name = "proc-macro-error"
+version = "1.0.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "da25490ff9892aab3fcf7c36f08cfb902dd3e71ca0f9f9517bea02a73a5ce38c"
+dependencies = [
+ "proc-macro-error-attr",
+ "proc-macro2",
+ "quote",
+ "syn 1.0.109",
+ "version_check",
+]
+
+[[package]]
+name = "proc-macro-error-attr"
+version = "1.0.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a1be40180e52ecc98ad80b184934baf3d0d29f979574e439af5a55274b35f869"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "version_check",
+]
+
+[[package]]
 name = "proc-macro2"
 version = "1.0.86"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4571,8 +4582,8 @@ dependencies = [
  "avian3d",
  "bevy",
  "bevy-inspector-egui",
- "bevy-tnua-avian3d",
  "bevy_gizmo_log",
+ "bevy_transform_interpolation",
  "blenvy",
  "leafwing-input-manager",
  "log",

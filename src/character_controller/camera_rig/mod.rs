@@ -29,7 +29,7 @@ pub fn track_entity(
     }
 }
 
-pub fn create_camera(mut commands: Commands) {
+pub fn create_camera(mut commands: Commands, asset_server: Res<AssetServer>) {
     commands.spawn((
         RiggedCamera,
         Camera3dBundle {
@@ -37,7 +37,7 @@ pub fn create_camera(mut commands: Commands) {
             transform: Transform::from_xyz(0.0, 0.0, 0.0)
                 .looking_at(Vec3::new(0.0, 0.0, 1.0), Vec3::new(0.0, 1.0, 0.0)),
             camera: Camera {
-                clear_color: ClearColorConfig::Custom(Color::linear_rgb(0.1, 0.1, 0.1)),
+                clear_color: ClearColorConfig::Custom(Color::linear_rgb(0.384, 0.71, 0.949)),
                 ..Default::default()
             },
             ..Default::default()
