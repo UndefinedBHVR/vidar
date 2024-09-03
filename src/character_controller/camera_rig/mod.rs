@@ -29,7 +29,7 @@ pub fn track_entity(
     }
 }
 
-pub fn create_camera(mut commands: Commands, asset_server: Res<AssetServer>) {
+pub fn create_camera(mut commands: Commands) {
     commands.spawn((
         RiggedCamera,
         Camera3dBundle {

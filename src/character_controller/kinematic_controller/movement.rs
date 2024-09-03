@@ -10,7 +10,8 @@
 //!   entities with a `KinematicCharacterController` component.
 //! - `collide_and_slide`: A function that implements the core logic for collision detection and
 //!   sliding, based on the Source engine's approach.
-//!
+//! - `depenetrate`: A function that implements basic depenetration logic. This is ran after
+//!   sliding to prevent the character from penetrating the surface.
 //! ## Usage
 //!
 //! To use this module, add the `collide_and_slide_system` to your game's schedule
@@ -29,38 +30,48 @@ use bevy::prelude::*;
 
 use super::KinematicCharacterController;
 
-/// This system handles collision detection and sliding for kinematic character controllers.
+/// Handles collision detection and sliding for kinematic character controllers.
+///
+/// # Arguments
+/// * `query` - Query for character controllers
+/// * `spatial_query` - Spatial query system for collision detection
+/// * `time` - Time resource for delta time calculations
 pub fn collide_and_slide_system(
-    mut character_controllers: Query<
-        (&mut Transform, &Collider, Entity, &mut KinematicCharacterController),
+    mut query: Query<
+        (&mut Transform, Entity, &mut KinematicCharacterController),
         With<RigidBody>,
     >,
     mut spatial_query: SpatialQuery,
     time: Res<Time>,
 ) {
-    for (mut transform, _, entity, mut character_controller) in &mut character_controllers {
-        // Filter out the current entity from the spatial query
+    for (mut transform, entity, mut controller) in &mut query {
         let filter = SpatialQueryFilter::default().with_excluded_entities([entity]);
 
         collide_and_slide(
             &mut spatial_query,
             &filter,
-            &mut character_controller,
+            &mut controller,
             &mut transform,
             &time,
+        );
+
+        depenetrate(
+            &mut spatial_query,
+            &filter,
+            &controller.collider,
+            &mut transform,
         );
     }
 }
 
 /// Implements collision detection and sliding for a kinematic character controller.
-/// This function is based on the Source engine's CBaseEntity::PhysicsTryMove function.
 ///
 /// # Arguments
-/// * `spatial_query` - The spatial query system for collision detection
-/// * `filter` - The filter to exclude specific entities from collision checks
-/// * `kinematic_controller` - The kinematic character controller to update
-/// * `transform` - The transform of the character to update
-/// * `time` - The time resource for delta time calculations
+/// * `spatial_query` - Spatial query system for collision detection
+/// * `filter` - Filter to exclude specific entities from collision checks
+/// * `controller` - Kinematic character controller to update
+/// * `transform` - Transform of the character to update
+/// * `time` - Time resource for delta time calculations
 fn collide_and_slide(
     spatial_query: &mut spatial_query::SpatialQuery,
     filter: &spatial_query::SpatialQueryFilter,
@@ -131,4 +142,35 @@ fn collide_and_slide(
     // Update the kinematic controller and transform
     kinematic_controller.velocity = velocity / delta_seconds;
     transform.translation += velocity;
+}
+
+/// Performs depenetration for a kinematic character controller.
+///
+/// # Arguments
+/// * `spatial_query` - Spatial query system for collision detection
+/// * `filter` - Filter to exclude specific entities from collision checks
+/// * `collider` - Collider of the character
+/// * `transform` - Transform of the character to update
+fn depenetrate(
+    spatial_query: &mut spatial_query::SpatialQuery,
+    filter: &spatial_query::SpatialQueryFilter,
+    collider: &Collider,
+    transform: &mut Transform,
+) {
+    const EPSILON: f32 = 0.001;
+
+    let hit = spatial_query.cast_shape(
+        collider,
+        transform.translation,
+        transform.rotation,
+        Dir3::NEG_Y,
+        0.0,
+        false,
+        filter,
+    );
+
+    if let Some(hit) = hit {
+        let push_out_distance = hit.time_of_impact + EPSILON;
+        transform.translation += hit.normal1 * push_out_distance;
+    }
 }

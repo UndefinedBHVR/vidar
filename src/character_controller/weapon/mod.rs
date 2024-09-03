@@ -6,4 +6,7 @@ use bevy::prelude::*;
 mod components;
 mod input;
 mod prefabs;
-pub(super) fn plugin(app: &mut App) {}
+pub(super) fn plugin(app: &mut App) {
+    // Temporarily appease clippy.
+    let _ = app;
+}
