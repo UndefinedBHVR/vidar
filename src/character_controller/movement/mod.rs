@@ -114,7 +114,7 @@ fn update_camera_rotation(
     let sensitivity = Vec2::new(0.12, 0.10);
     let mouse_delta = action_state.axis_pair(&PlayerActions::Camera) * delta_time * sensitivity;
     let (mut yaw, mut pitch, _) = camera_transform.rotation.to_euler(EulerRot::YXZ);
-    pitch = (pitch + mouse_delta.y).clamp(-1.54, 1.54);
+    pitch = (pitch + -mouse_delta.y).clamp(-1.54, 1.54);
     yaw -= mouse_delta.x;
 
     camera_transform.rotation = Quat::from_euler(EulerRot::YXZ, yaw, pitch, 0.0);
