@@ -1,12 +1,18 @@
-//! Weapon module. Weapons are each defined as their own singleton entity, with a series of
-//! components that define their properties. This makes having data driven weapons easier to
-//! implement, as you can define a weapon in a data file and then load it in at runtime or even
-//! modify it at runtime.
 use bevy::prelude::*;
 mod components;
+mod event;
 mod input;
 mod prefabs;
 pub(super) fn plugin(app: &mut App) {
     // Temporarily appease clippy.
-    let _ = app;
+    app.add_plugins(input::plugin);
+}
+
+#[derive(Component, Reflect, Debug)]
+#[reflect(Component)]
+pub struct WeaponContainer {
+    // The currently active weapon slot. If None, no weapon is equipped.
+    active_slot: Option<Entity>,
+    // Just a list of weapon slots.
+    slots: Vec<Entity>,
 }

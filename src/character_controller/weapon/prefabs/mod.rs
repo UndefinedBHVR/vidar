@@ -1,7 +1,8 @@
 use super::components::*;
 use bevy::prelude::*;
+
 #[derive(Bundle, Reflect, Debug)]
-struct AssaultWeaponBundle {
+struct RangedPrototypeBundle {
     core: Weapon,
     falloff: Falloff,
     weapon_id: WeaponID,
@@ -11,40 +12,16 @@ struct AssaultWeaponBundle {
     fires_multiple: FiresMultiple,
 }
 
-#[derive(Bundle)]
-struct ShotgunBundle {
-    weapon: Weapon,
-    falloff: Falloff,
-    weapon_id: WeaponID,
-    ranged_weapon: RangedWeapon,
-    ammo: HasAmmo,
-    model: WeaponModel,
-    fires_multiple: FiresMultiple,
-}
-
-#[derive(Bundle)]
-struct SniperRifleBundle {
-    weapon: Weapon,
-    falloff: Falloff,
-    weapon_id: WeaponID,
-    ranged_weapon: RangedWeapon,
-    ammo: HasAmmo,
-    model: WeaponModel,
-    fires_multiple: FiresMultiple,
-}
-
-#[derive(Bundle)]
-struct RocketLauncherBundle {
-    weapon: Weapon,
-    weapon_id: WeaponID,
-    projectile_weapon: ProjectileWeapon,
-    ammo: HasAmmo,
-    model: WeaponModel,
-    fires_multiple: FiresMultiple,
-}
-
-impl Default for AssaultWeaponBundle {
+impl Default for RangedPrototypeBundle {
     fn default() -> Self {
+        Self::assault_rifle()
+    }
+}
+
+/// This is just some default types we can use for testing.
+#[allow(unused)]
+impl RangedPrototypeBundle {
+    pub fn assault_rifle() -> Self {
         Self {
             core: Weapon { damage: 15.0, range: 150.0, fire_interval: 0.1, next_fire: 0.0 },
             falloff: Falloff { start: 75.0, duration: 25.0 },
@@ -55,12 +32,10 @@ impl Default for AssaultWeaponBundle {
             fires_multiple: FiresMultiple { count: 1 },
         }
     }
-}
 
-impl Default for ShotgunBundle {
-    fn default() -> Self {
+    pub fn shotgun() -> Self {
         Self {
-            weapon: Weapon { damage: 8.0, range: 50.0, fire_interval: 0.8, next_fire: 0.0 },
+            core: Weapon { damage: 8.0, range: 50.0, fire_interval: 0.8, next_fire: 0.0 },
             falloff: Falloff { start: 10.0, duration: 20.0 },
             weapon_id: WeaponID("shotgun".to_string()),
             ranged_weapon: RangedWeapon,
@@ -69,12 +44,10 @@ impl Default for ShotgunBundle {
             fires_multiple: FiresMultiple { count: 8 },
         }
     }
-}
 
-impl Default for SniperRifleBundle {
-    fn default() -> Self {
+    pub fn sniper_rifle() -> Self {
         Self {
-            weapon: Weapon { damage: 100.0, range: 500.0, fire_interval: 1.5, next_fire: 0.0 },
+            core: Weapon { damage: 100.0, range: 500.0, fire_interval: 1.5, next_fire: 0.0 },
             falloff: Falloff { start: 400.0, duration: 100.0 },
             weapon_id: WeaponID("sniper_rifle".to_string()),
             ranged_weapon: RangedWeapon,
@@ -83,6 +56,16 @@ impl Default for SniperRifleBundle {
             fires_multiple: FiresMultiple { count: 1 },
         }
     }
+}
+
+#[derive(Bundle)]
+struct RocketLauncherBundle {
+    weapon: Weapon,
+    weapon_id: WeaponID,
+    projectile_weapon: ProjectileWeapon,
+    ammo: HasAmmo,
+    model: WeaponModel,
+    fires_multiple: FiresMultiple,
 }
 
 impl Default for RocketLauncherBundle {

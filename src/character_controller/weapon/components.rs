@@ -1,5 +1,3 @@
-//! Weapon-related components for a game engine.
-//!
 //! This module defines various components that can be used to represent
 //! different aspects of weapons in a game. These components can be attached
 //! to entities to give them weapon-like properties and behaviors.

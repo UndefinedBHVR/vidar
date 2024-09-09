@@ -10,8 +10,8 @@
 //!   entities with a `KinematicCharacterController` component.
 //! - `collide_and_slide`: A function that implements the core logic for collision detection and
 //!   sliding, based on the Source engine's approach.
-//! - `depenetrate`: A function that implements basic depenetration logic. This is ran after
-//!   sliding to prevent the character from penetrating the surface.
+//! - `depenetrate`: A function that implements basic depenetration logic. This is ran after sliding
+//!   to prevent the character from penetrating the surface.
 //! ## Usage
 //!
 //! To use this module, add the `collide_and_slide_system` to your game's schedule
@@ -37,30 +37,16 @@ use super::KinematicCharacterController;
 /// * `spatial_query` - Spatial query system for collision detection
 /// * `time` - Time resource for delta time calculations
 pub fn collide_and_slide_system(
-    mut query: Query<
-        (&mut Transform, Entity, &mut KinematicCharacterController),
-        With<RigidBody>,
-    >,
+    mut query: Query<(&mut Transform, Entity, &mut KinematicCharacterController), With<RigidBody>>,
     mut spatial_query: SpatialQuery,
     time: Res<Time>,
 ) {
     for (mut transform, entity, mut controller) in &mut query {
         let filter = SpatialQueryFilter::default().with_excluded_entities([entity]);
 
-        collide_and_slide(
-            &mut spatial_query,
-            &filter,
-            &mut controller,
-            &mut transform,
-            &time,
-        );
+        collide_and_slide(&mut spatial_query, &filter, &mut controller, &mut transform, &time);
 
-        depenetrate(
-            &mut spatial_query,
-            &filter,
-            &controller.collider,
-            &mut transform,
-        );
+        depenetrate(&mut spatial_query, &filter, &controller.collider, &mut transform);
     }
 }
 

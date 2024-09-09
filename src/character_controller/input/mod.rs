@@ -1,3 +1,7 @@
+//! This module defines the core input structure of the character controller.
+//! It is used to define the input actions and their associated default bindings.
+//! The actual input response behavior is defined in the relevant module for the action.
+//! Such as movement input is defined in the movement module, or weapon input in the weapon module.
 use bevy::prelude::*;
 use leafwing_input_manager::prelude::*;
 pub fn plugin(app: &mut App) {
