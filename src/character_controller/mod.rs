@@ -18,7 +18,6 @@ use bevy::{
 use camera_rig::TrackedEntity;
 use input::PlayerActions;
 use leafwing_input_manager::InputManagerBundle;
-use movement::Gravity;
 
 use crate::GameState;
 mod camera_rig;
@@ -60,13 +59,14 @@ pub struct CharacterControllerBundle {
     pub current_player: CurrentPlayer,
     pub player: Player,
     pub input: InputManagerBundle<PlayerActions>,
-    pub gravity: Gravity,
+    pub gravity: kinematic_controller::KCCGravity,
     pub rigid_body: RigidBody,
     pub collider: Collider,
     pub ground_caster: ShapeCaster,
     pub kinematic_controller: kinematic_controller::KinematicCharacterController,
     pub kcc_grounded: kinematic_controller::KCCGrounded,
     pub kcc_floor_detection: kinematic_controller::KCCFloorDetection,
+    pub slope: kinematic_controller::KCCSlope,
 }
 
 impl Default for CharacterControllerBundle {
@@ -76,7 +76,7 @@ impl Default for CharacterControllerBundle {
             current_player: CurrentPlayer,
             player: Player,
             input: InputManagerBundle::with_map(input::input_map()),
-            gravity: Gravity::default(),
+            gravity: kinematic_controller::KCCGravity::default(),
             rigid_body: RigidBody::Kinematic,
             collider: Capsule3d::new(0.4, 0.8).into(),
             ground_caster: ShapeCaster::new(
@@ -89,6 +89,7 @@ impl Default for CharacterControllerBundle {
             kinematic_controller: kinematic_controller::KinematicCharacterController::default(),
             kcc_grounded: kinematic_controller::KCCGrounded::default(),
             kcc_floor_detection: kinematic_controller::KCCFloorDetection::default(),
+            slope: kinematic_controller::KCCSlope::default(),
         }
     }
 }
@@ -118,5 +119,5 @@ pub fn spawn_test_character(
         },
         LockedAxes::ROTATION_LOCKED,
         Name::new("CurrentPlayer"),
-    ));
+     ));
 }

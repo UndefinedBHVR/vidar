@@ -15,6 +15,7 @@ use super::{
 
 pub fn plugin(app: &mut App) {
     app.add_systems(Update, weapon_input.run_if(in_state(GameState::Playing)));
+    app.add_event::<WeaponFiredEvent>();
 }
 
 pub fn weapon_input(

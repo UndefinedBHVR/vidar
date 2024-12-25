@@ -13,6 +13,7 @@ pub(super) fn plugin(app: &mut App) {
     app.add_systems(
         PostUpdate,
         (
+            movement::gravity_system,
             movement::collide_and_slide_system,
             update_kinematic_character_controller,
             update_kinematic_floor,
@@ -104,6 +105,51 @@ impl Default for KCCFloorDetection {
 #[derive(Component, Reflect, Debug, Default)]
 #[reflect(Component)]
 pub struct KCCFloorSnap;
+
+/// Component that handles gravity for a kinematic character controller
+#[derive(Component, Reflect, Debug)]
+#[reflect(Component)]
+pub struct KCCGravity {
+    /// The maximum velocity the character can reach when falling
+    pub terminal_velocity: f32,
+    /// The acceleration factor (9.81 on Earth)
+    pub acceleration_factor: f32,
+    /// Current velocity from gravity
+    pub current_velocity: Vec3,
+    /// Direction of gravity
+    pub direction: Vec3,
+}
+
+impl Default for KCCGravity {
+    fn default() -> Self {
+        Self {
+            terminal_velocity: 53.0, // ~terminal velocity for human
+            acceleration_factor: 9.81 * 2.0,
+            current_velocity: Vec3::ZERO,
+            direction: Vec3::NEG_Y,
+        }
+    }
+}
+
+/// Component that controls how the character handles slopes
+#[derive(Component, Reflect, Debug)]
+#[reflect(Component)]
+pub struct KCCSlope {
+    /// Maximum angle in radians that the character can walk up
+    pub max_slope_angle: f32,
+    /// Friction coefficient applied when on slopes
+    pub friction: f32,
+}
+
+impl Default for KCCSlope {
+    fn default() -> Self {
+        Self {
+            max_slope_angle: 80.0_f32.to_radians(),
+            friction: 0.8,
+        }
+    }
+}
+
 /// Function that updates the kinematic character controller's internal state. Currently, this only
 /// updates the previous velocity.
 pub fn update_kinematic_character_controller(

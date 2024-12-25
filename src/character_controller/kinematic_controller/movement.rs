@@ -1,133 +1,199 @@
 //! # Character Controller Module
 //!
-//! This module provides functionality for implementing kinematic character controllers
-//! in a 3D game environment. It includes systems and functions for collision detection
-//! and sliding, allowing characters to move smoothly in complex environments.
+//! This module provides a robust kinematic character controller implementation
+//! for 3D environments, handling collision detection, sliding, and gravity.
 //!
-//! ## Key Components
+//! ## Features
 //!
-//! - `collide_and_slide_system`: A system that handles collision detection and sliding for all
-//!   entities with a `KinematicCharacterController` component.
-//! - `collide_and_slide`: A function that implements the core logic for collision detection and
-//!   sliding, based on the Source engine's approach.
-//! - `depenetrate`: A function that implements basic depenetration logic. This is ran after sliding
-//!   to prevent the character from penetrating the surface.
-//! ## Usage
+//! - Multi-pass collision detection and response
+//! - Slope-aware movement
+//! - Configurable gravity with terminal velocity
+//! - Efficient depenetration system
 //!
-//! To use this module, add the `collide_and_slide_system` to your game's schedule
-//! and ensure that entities intended to use character controller behavior have both
-//! `KinematicCharacterController` and `RigidBody` components.
+//! ## Systems
 //!
-//! ## Dependencies
-//!
-//! This module relies on the `avian3d` crate for physics operations and interactions.
+//! - `collide_and_slide_system`: Main movement and collision response system
+//! - `gravity_system`: Handles gravity application with terminal velocity
 
-use avian3d::{
-    math::AdjustPrecision,
-    prelude::*,
-};
+use avian3d::{math::AdjustPrecision, prelude::*};
 use bevy::prelude::*;
 
-use super::KinematicCharacterController;
+use super::{KCCFloorDetection, KCCGravity, KCCSlope, KinematicCharacterController};
 
-/// Handles collision detection and sliding for kinematic character controllers.
+// Movement configuration constants
+const MAX_BUMPS: u32 = 4;
+const MIN_MOVEMENT: f32 = 0.0001;
+const COLLISION_EPSILON: f32 = 0.01;
+const DEPENETRATION_EPSILON: f32 = 0.01;
+
+/// Result of a movement calculation iteration
+#[derive(Debug)]
+struct MovementResult {
+    movement: Vec3,
+    remaining_velocity: Vec3,
+    hit_normal: Option<Vec3>,
+}
+
+/// Main system for handling character movement and collision response
 ///
-/// # Arguments
-/// * `query` - Query for character controllers
-/// * `spatial_query` - Spatial query system for collision detection
-/// * `time` - Time resource for delta time calculations
+/// Processes both horizontal movement and gravity in separate passes to ensure
+/// proper collision response in all scenarios.
+#[allow(clippy::too_many_arguments)]
 pub fn collide_and_slide_system(
-    mut query: Query<(&mut Transform, Entity, &mut KinematicCharacterController), With<RigidBody>>,
+    mut query: Query<(
+        &mut Transform,
+        Entity,
+        &mut KinematicCharacterController,
+        Option<&KCCSlope>,
+        Option<&KCCFloorDetection>,
+        Option<&mut KCCGravity>,
+    ), With<RigidBody>>,
     mut spatial_query: SpatialQuery,
     time: Res<Time>,
 ) {
-    for (mut transform, entity, mut controller) in &mut query {
+    let delta = time.delta_seconds_f64().adjust_precision();
+
+    for (mut transform, entity, mut controller, slope, floor_detection, gravity) in &mut query {
         let filter = SpatialQueryFilter::default().with_excluded_entities([entity]);
 
-        collide_and_slide(&mut spatial_query, &filter, &mut controller, &mut transform, &time);
+        // Process horizontal movement
+        let movement = process_movement(
+            &mut spatial_query,
+            &filter,
+            &controller,
+            &mut transform,
+            controller.velocity * delta,
+            slope,
+            floor_detection,
+            false,
+        );
 
+        controller.velocity = movement.remaining_velocity / delta;
+
+        // Process gravity separately if enabled
+        if let Some(mut gravity) = gravity {
+            let movement = process_movement(
+                &mut spatial_query,
+                &filter,
+                &controller,
+                &mut transform,
+                gravity.current_velocity * delta,
+                slope,
+                floor_detection,
+                true,
+            );
+
+            // Update gravity velocity based on collision results
+            if movement.hit_normal.is_some() {
+                gravity.current_velocity = movement.remaining_velocity / delta;
+            }
+        }
+
+        // Perform depenetration
         depenetrate(&mut spatial_query, &filter, &controller.collider, &mut transform);
     }
 }
 
-/// Implements collision detection and sliding for a kinematic character controller.
+/// Core movement processing function that handles collision detection and response
 ///
-/// # Arguments
-/// * `spatial_query` - Spatial query system for collision detection
-/// * `filter` - Filter to exclude specific entities from collision checks
-/// * `controller` - Kinematic character controller to update
-/// * `transform` - Transform of the character to update
-/// * `time` - Time resource for delta time calculations
-fn collide_and_slide(
+/// Returns a `MovementResult` containing the actual movement performed and any
+/// remaining velocity that couldn't be applied due to collisions.
+fn process_movement(
     spatial_query: &mut spatial_query::SpatialQuery,
     filter: &spatial_query::SpatialQueryFilter,
-    kinematic_controller: &mut KinematicCharacterController,
+    controller: &KinematicCharacterController,
     transform: &mut Transform,
-    time: &Res<Time>,
-) {
-    const EPSILON: f32 = 0.01; // Small padding value to prevent precision issues
-    const MAX_BUMPS: u32 = 4; // Maximum number of collision iterations
-    let delta_seconds = time.delta_seconds_f64().adjust_precision();
-    let mut velocity = kinematic_controller.velocity * delta_seconds;
-    let mut planes = Vec::new();
+    velocity: Vec3,
+    slope: Option<&KCCSlope>,
+    floor_detection: Option<&KCCFloorDetection>,
+    is_gravity_pass: bool,
+) -> MovementResult {
+    if velocity.length_squared() < MIN_MOVEMENT {
+        return MovementResult {
+            movement: Vec3::ZERO,
+            remaining_velocity: Vec3::ZERO,
+            hit_normal: None,
+        };
+    }
 
-    for bump in 0..MAX_BUMPS {
-        if velocity.length_squared() == 0.0 {
+    let mut total_movement = Vec3::ZERO;
+    let mut current_velocity = velocity;
+    let mut collision_planes = Vec::with_capacity(MAX_BUMPS as usize);
+    let mut last_hit_normal = None;
+
+    for _ in 0..MAX_BUMPS {
+        if current_velocity.length_squared() < MIN_MOVEMENT {
             break;
         }
 
-        // Handle edge cases
-        if velocity.is_nan() {
-            velocity = Vec3::ZERO;
-            break;
-        }
+        let (velocity_dir, length) = match Dir3::new_and_length(current_velocity) {
+            Ok(v) => v,
+            Err(_) => break,
+        };
 
-        if !velocity.is_finite() {
-            error!(
-                "Failed to run `collide_and_slide`: velocity is not finite, but `{velocity:?}`. Escaped after {bump} bumps.",
-            );
-            velocity = Vec3::ZERO;
-            break;
-        }
-
-        let (velocity_normalized, length) = Dir3::new_and_length(velocity).unwrap();
-        let hit = spatial_query.cast_shape(
-            &kinematic_controller.collider,
+        match spatial_query.cast_shape(
+            &controller.collider,
             transform.translation,
             transform.rotation,
-            velocity_normalized,
+            velocity_dir,
             length,
             false,
             filter,
-        );
+        ) {
+            Some(hit) => {
+                let safe_distance = (hit.time_of_impact - COLLISION_EPSILON).max(0.0);
+                let safe_movement = current_velocity * safe_distance;
 
-        if let Some(hit) = hit {
-            // Move to the safe distance minus padding
-            let safe_movement = velocity * (hit.time_of_impact - EPSILON).max(0.0);
-            transform.translation += safe_movement;
+                transform.translation += safe_movement;
+                total_movement += safe_movement;
+                current_velocity -= safe_movement;
+                last_hit_normal = Some(hit.normal1);
 
-            // Update velocity
-            velocity -= safe_movement;
-            planes.push(hit.normal1);
-            velocity = velocity.reject_from(hit.normal1);
-
-            // Handle sliding along multiple planes
-            if planes.len() > 1 {
-                for (plane, next_plane) in
-                    planes.iter().zip(planes.iter().cycle().skip(1)).take(planes.len())
-                {
-                    let crease = plane.cross(*next_plane);
-                    velocity = velocity.project_onto(crease);
+                if is_gravity_pass && should_stop_on_slope(slope, floor_detection, hit.normal1) {
+                    break;
                 }
+
+                current_velocity = calculate_sliding_velocity(&mut collision_planes, hit.normal1, current_velocity);
             }
-        } else {
-            break;
+            None => {
+                transform.translation += current_velocity;
+                total_movement += current_velocity;
+                current_velocity = Vec3::ZERO;
+                break;
+            }
         }
     }
 
-    // Update the kinematic controller and transform
-    kinematic_controller.velocity = velocity / delta_seconds;
-    transform.translation += velocity;
+    MovementResult {
+        movement: total_movement,
+        remaining_velocity: current_velocity,
+        hit_normal: last_hit_normal,
+    }
+}
+
+#[inline]
+fn should_stop_on_slope(slope: Option<&KCCSlope>, floor_detection: Option<&KCCFloorDetection>, normal: Vec3) -> bool {
+    match (slope, floor_detection) {
+        (Some(slope), Some(_)) => normal.angle_between(Vec3::Y) < slope.max_slope_angle,
+        _ => true,
+    }
+}
+
+/// Calculates sliding velocity along collision planes
+#[inline]
+fn calculate_sliding_velocity(planes: &mut Vec<Vec3>, normal: Vec3, velocity: Vec3) -> Vec3 {
+    planes.push(normal);
+    let mut result = velocity.reject_from(normal);
+
+    // Handle multiple collision planes
+    if planes.len() > 1 {
+        result = planes.windows(2)
+            .fold(result, |acc, plane_pair| {
+                acc.project_onto(plane_pair[0].cross(plane_pair[1]))
+            });
+    }
+
+    result
 }
 
 /// Performs depenetration for a kinematic character controller.
@@ -143,8 +209,6 @@ fn depenetrate(
     collider: &Collider,
     transform: &mut Transform,
 ) {
-    const EPSILON: f32 = 0.001;
-
     let hit = spatial_query.cast_shape(
         collider,
         transform.translation,
@@ -156,7 +220,33 @@ fn depenetrate(
     );
 
     if let Some(hit) = hit {
-        let push_out_distance = hit.time_of_impact + EPSILON;
+        let push_out_distance = hit.time_of_impact + DEPENETRATION_EPSILON;
         transform.translation += hit.normal1 * push_out_distance;
+    }
+}
+
+/// Optimized gravity system with terminal velocity handling
+pub fn gravity_system(
+    mut query: Query<(&KinematicCharacterController, &mut KCCGravity)>,
+    time: Res<Time>,
+) {
+    let dt = time.delta_seconds();
+
+    for (_, mut gravity) in query.iter_mut() {
+        let current_speed = gravity.current_velocity.length();
+        if current_speed >= gravity.terminal_velocity {
+            // Decelerate to terminal velocity
+            gravity.current_velocity *= 0.99;
+            continue;
+        }
+
+        let delta_velocity = gravity.direction * gravity.acceleration_factor * dt;
+        let new_velocity = gravity.current_velocity + delta_velocity;
+
+        gravity.current_velocity = if new_velocity.length() > gravity.terminal_velocity {
+            new_velocity.normalize() * gravity.terminal_velocity
+        } else {
+            new_velocity
+        };
     }
 }

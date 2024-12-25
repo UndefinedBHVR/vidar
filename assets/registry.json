@@ -13551,6 +13551,11 @@
       "isResource": false,
       "long_name": "bevy_ui::ui_node::Node",
       "properties": {
+        "border_radius": {
+          "type": {
+            "$ref": "#/$defs/bevy_ui::ui_node::ResolvedBorderRadius"
+          }
+        },
         "calculated_size": {
           "type": {
             "$ref": "#/$defs/glam::Vec2"
@@ -13582,7 +13587,8 @@
         "calculated_size",
         "outline_width",
         "outline_offset",
-        "unrounded_size"
+        "unrounded_size",
+        "border_radius"
       ],
       "short_name": "Node",
       "type": "object",
@@ -13691,6 +13697,43 @@
         "tracks"
       ],
       "short_name": "RepeatedGridTrack",
+      "type": "object",
+      "typeInfo": "Struct"
+    },
+    "bevy_ui::ui_node::ResolvedBorderRadius": {
+      "additionalProperties": false,
+      "isComponent": false,
+      "isResource": false,
+      "long_name": "bevy_ui::ui_node::ResolvedBorderRadius",
+      "properties": {
+        "bottom_left": {
+          "type": {
+            "$ref": "#/$defs/f32"
+          }
+        },
+        "bottom_right": {
+          "type": {
+            "$ref": "#/$defs/f32"
+          }
+        },
+        "top_left": {
+          "type": {
+            "$ref": "#/$defs/f32"
+          }
+        },
+        "top_right": {
+          "type": {
+            "$ref": "#/$defs/f32"
+          }
+        }
+      },
+      "required": [
+        "top_left",
+        "top_right",
+        "bottom_left",
+        "bottom_right"
+      ],
+      "short_name": "ResolvedBorderRadius",
       "type": "object",
       "typeInfo": "Struct"
     },

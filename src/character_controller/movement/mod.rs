@@ -15,14 +15,14 @@ use leafwing_input_manager::{
 use super::{
     camera_rig::RiggedCamera,
     input::PlayerActions,
-    kinematic_controller::KinematicCharacterController,
+    kinematic_controller::{KCCGravity, KinematicCharacterController},
     CharacterControllerSet,
 };
 
 pub fn plugin(app: &mut App) {
     app.add_systems(
         FixedUpdate,
-        (velocity_dampening, update_grounded, movement_input, gravity_system)
+        (velocity_dampening, update_grounded, movement_input)
             .chain()
             .in_set(CharacterControllerSet::Input),
     );
@@ -35,16 +35,6 @@ pub fn plugin(app: &mut App) {
 #[component(storage = "SparseSet")]
 pub struct Grounded;
 
-#[derive(Component, Reflect, Debug)]
-#[reflect(Component)]
-pub struct Gravity(Vec3);
-
-impl Default for Gravity {
-    fn default() -> Self {
-        Self(Vec3::new(0.0, -9.81 * 2.0, 0.0))
-    }
-}
-
 /// System that handles player movement and camera rotation based on input
 ///
 /// This system processes player actions and updates the character's movement and camera
@@ -55,6 +45,7 @@ pub fn movement_input(
         &mut KinematicCharacterController,
         Has<Grounded>,
         &mut Transform,
+        Option<&mut KCCGravity>,
     )>,
     mut camera_query: Query<
         &mut Transform,
@@ -63,13 +54,13 @@ pub fn movement_input(
     time: Res<Time>,
 ) {
     // Early return if we can't get the player or camera
-    let Ok((action_state, mut kcc, grounded, mut player_transform)) = player_query.get_single_mut()
+    let Ok((action_state, mut kcc, grounded, mut player_transform, mut gravity)) = player_query.get_single_mut()
     else {
         return;
     };
     let Ok(mut camera_transform) = camera_query.get_single_mut() else { return };
 
-    update_player_movement(action_state, &mut kcc, grounded, &player_transform);
+    update_player_movement(action_state, &mut kcc, grounded, &player_transform, gravity.as_deref_mut());
     update_camera_rotation(
         action_state,
         &mut camera_transform,
@@ -84,6 +75,7 @@ fn update_player_movement(
     kcc: &mut KinematicCharacterController,
     grounded: bool,
     player_transform: &Transform,
+    gravity: Option<&mut KCCGravity>,
 ) {
     // Handle horizontal movement
     let movement = action_state.clamped_axis_pair(&PlayerActions::Movement).xy();
@@ -91,16 +83,18 @@ fn update_player_movement(
         .rotation
         .mul_vec3(Vec3::new(movement.x, 0.0, -movement.y))
         .normalize_or_zero()
-        * 2.0;
+        * 4.0;
 
     if movement != Vec2::ZERO {
         kcc.velocity.x = direction.x;
         kcc.velocity.z = direction.z;
     }
 
-    // Handle jumping
+    // Handle jumping through gravity system
     if action_state.pressed(&PlayerActions::Jump) && grounded {
-        kcc.velocity.y = 5.0;
+        if let Some(gravity) = gravity {
+            gravity.current_velocity = Vec3::Y * 5.0;
+        }
     }
 }
 
@@ -128,21 +122,9 @@ pub fn velocity_dampening(mut query: Query<&mut KinematicCharacterController>, _
     }
 }
 
-pub fn gravity_system(
-    mut query: Query<(&mut KinematicCharacterController, &Gravity, Has<Grounded>)>,
-    time: Res<Time>,
-) {
-    for (mut kcc, gravity, grounded) in query.iter_mut() {
-        kcc.velocity += gravity.0 * time.delta_seconds();
-        if grounded && gravity.0.dot(kcc.velocity) > -0.01 {
-            kcc.velocity.y = 0.0;
-        }
-    }
-}
-
 fn update_grounded(
     mut commands: Commands,
-    mut query: Query<(Entity, &ShapeHits, &Rotation), (With<Gravity>, With<RigidBody>)>,
+    mut query: Query<(Entity, &ShapeHits, &Rotation), (With<KCCGravity>, With<RigidBody>)>,
 ) {
     let _ = (45.0 as Scalar).to_radians();
     for (entity, hits, _) in &mut query {
